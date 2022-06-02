@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <meta chartset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  </head>
+  <body>
+    <nav id="navbar">
+     <header>C Reference Manual</header>
+     <ul>
+       <li><a class="nav-link" href="#Introduction">Introduction</a>
+       </li>
+       <li><a class="nav-link" href="#Syntax_definition">Syntax definition</a>
+       </li>
+       <li><a class="nav-link" href="#Fundamental_concepts">Fundamental concepts</a>
+       </li>
+       <li><a class="nav-link" href="#Data_layout_directives">Data layout directives</a>
+       </li>
+       <li><a class="nav-link" href="#Procedures">Procedures</a>
+       </li>
+       <li><a class="nav-link" href="#Expressions">Expressions</a>
+       </li> 
+       <li><a class="nav-link" href="#Further_work">Further work</a>
+       </li>
+    </ul>
+</nav>
+    <main id="main-doc">
+      <section class="main-section" id="Introduction">
+        <header>Introduction</header>
+        <article>
+          <p>C-- is a portable assembly language designed to be a good backend for high level languages (particularly
+for those that make use of garbage-collection) and to run fast on a number of todays major
+computer architectures. It is also designed to have as few dependencies as possible on the underlying
+hardware, but speed and ease of use has sometimes taken precedence over orthogonality and
+minimality. C-- should be rich enough to be a viable backend for most mainstream and research
+compilers.</p>
+<p>This paper should be sufficiently self-supporting so that anyone who knows an imperative language
+and is acquainted with computers should be able to write her/his own C-- programs after reading this
+document.</p>
+</article>
+</section>
+<section class="main-section" id="Syntax_definition">
+  <header>Syntax definition</header>
+  <article>
+    <p>The syntax of C-- is given in Figures 1 and 2.</p>
+    <ol>
+      <li>
+        General</li>
+        <p>A C-- program file is written in eight bit ASCII characters. It consists in a sequence of data layout
+directives (Section 4), and/or procedure definitions (Section 5), and/or import declarations, and/or
+export declarations (Section 2.5), interleaved in any order.</p>
+<p>A C-- compilation unit is a C-- program file that can be successfully compiled and that is suitable
+for linking.</p>
+<p>C-- does not support input/output. Nevertheless, it can be accomplished using a foreign language
+call (Section 3.8).</p>
+<li>
+  Comments</li>
+  <p>Comments start with /* and end with */. They cannot be nested.</p>
+  <li>
+    Names</li>
+    <p>Names are made up of letters, digits, underscore and dots. A name cannot begin with a number
+character or with a dot followed by a number character. Upper and lower case are distinct. Imported
+names should also follow these restrictions.</p>
+<p>Names are identifiers for registers or memory addresses (Section 3.7).</p>
+<p>The following are examples of legal C-- names:</p>
+<code>
+x<br>
+foo<br>
+_912<br>
+aname12<br>
+_foo.name_abit_12.long<br>
+Sys.Indicators</code>
+<p>These are two illegal C-- names:</p>
+<code>
+.9Aname<br>
+3illegal</code>
+<li>
+  Name scope</li>
+  <p>Procedure and label names are always global inside a C-- compilation unit (or program). Local variable
+names and local control labels are only in scope of the procedure body where they are declared.
+There is no nested scoping of names inside a procedure. Procedure and label names may be used
+before they are declared.</p>
+<li>
+  The <i>import</i> and <i>export</i> declarations</li>
+  <p>Names that are to be used outside of the C-- program must be exported with the export declaration.
+Likewise, names that the C-- program uses and does not declare must be imported with the import
+declaration. Only procedure and (pointer) label names may be exported.</p>
+<p>Imported names should follow the syntatic restriction mentioned in Section 2.3.</p>
+<p>An example where a few C external names are imported and a few C-- names are exported:</p>
+<code>import printf, sqrt; /* C procedures used in this C-- program */<br>
+export foo, bar; /* To be used outside this C-- program */</code>
+<p>Names that are explicitly exported and imported are guaranteed to be unchanged by the compiler. All
+other names might be renamed.</p>
+<p>An import or an export declaration may appear anywhere in the program where a data layout
+directive or a procedure definition does.</p>
+<li>
+  Constants</li>
+  <p>Constants can be (signed) integers, (signed) floating point numbers, characters, strings and names.
+C-- follows C’s syntax for denoting integer, floating point, character, and string constants.</p>
+<ol>
+  <li>
+    Integer and floating point numbers</li>
+    <p>Integer constants have of type word. Floating point constants have type float. Their size is
+architecture-dependent.</p>
+<li>
+  Characters and strings</li>
+  <p>Character and string constants are treated as integers and as pointer labels respectively. Character
+constants are ASCII characters surrounded by single quotes. String constants are a sequence of ASCII
+characters surrounded by double quotes.</p>
+<p>A character constant is treated as an integer whose value is the character’s 8-bit ASCII code. Therefore,
+character constants have type word1. C-- uses C’s escape sequences to denote special characters,
+such as \n for the new line and \t for the tabulator.</p>
+<p>For example, character constant ’H’ is a word1 with value 72.</p>
+<p>String constants are like labels that point to the first word1 of an array of word1s stored in static
+memory. Therefore, they have type wordn where n is the particular architecture’s natural pointer
+size. String constants are not automatically null-terminated.</p>
+<p>For example, the string "Hello World" is viewed as a label that points to the first byte of the array
+of bytes with values 72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, stored in static memory.</p>
+<p>It is possible to have UTF-8 integers for single characters and for string characters.</p>
+<p>The syntax to specify an UTF-8 constant is:</p>
+<code>unicode(constant)</code>
+<p>where constant is a character constant or a string constant. The type of UTF-8 characters is word2,
+for it requires two bytes—two ASCII characters—to code a Unicode character. UTF-8 strings are
+pointers to the first word2 of an array of word2s stored in static memory, and therefore, they have
+type wordn, where n is the architecture’s natural pointer size.</p>
+</ol>
+</ol>
+</article>
+</section>
+<section class="main-section" id="Fundamental_concepts">
+<header>Fundamental concepts</header>
+<article>
+  <ol>
+    <li>Memory</li>
+    <p>Memory is an array of bytes from which different sized types (Section 3.4) can be read and written.
+The size of the addressable memory is implementation dependent (Section 3.6). All addresses and offsets are specified in bytes. No guarantee about endianess is given, i.e. a portable program should
+either not depend on a specific endianess or find it out.</p>
+<li>Data segment</li>
+<p>The data segment is the part of memory where the static, initialised or uninitialised, data is allocated.
+The data segment is read/write, so the values stored can be changed at runtime. The size and initial
+content of the data segment is determined at compile time (Section 4). C-- does not provide dynamic
+memory allocation natively, nonetheless, it can be accomplished with foreign language calls
+(Section 3.8 and Section 5.3).</p>
+<li>Code segment</li>
+<p>The code segment is the part of memory where the executable program code is stored (Section 5).
+The code segment consists of a series of procedure definitions.</p>
+<p>C-- does not currently provide a mechanism for creating code at runtime.</p>
+<li>Types</li>
+<p>There are only two kinds of types provided by C--, namely word and float. These types can have
+different sizes.</p>
+<ul>
+  <li>The size of a word can be 1, 2, 4 or 8 bytes.</li>
+  <li>The size of a float can be 4 or 8 bytes.</li>
+</ul>
+<p>A type must be qualified with a size. Thus word1 and word2 are different types.</p>
+<p>There is no pointer type. The wordn type can be used for pointers (addresses), where n is the
+particular architecture’s natural pointer size, i.e.: n is the number of bytes needed to hold a memory
+address in the particular architecture.</p>
+<p>For example, a four byte word is specified as word4, an eight byte float is specified as float8 and
+so on.</p>
+<p>Types are used in</p>
+<ol>
+  <li><b>Declaration statements</b>(Section 5.2.2), to declare the type of local variables.</li>
+  <li><b>Memory write statements and memory read expressions</b>(Section 5.2.4 and Section 6.2,
+respectively) to indicate the type of the value written/read.</li>
+<li><b>Data layout directives</b>(Section 4) to indicate the type of the allocated datum.</li>
+</ol>
+<li>Local variables (or registers)</li>
+<p>Any number of local variable names may be declared inside procedure bodies. They are typed storage
+locations that don’t have an address. The term “local variable name” is interchangeable with the term
+“register”, since there is an unlimited supply of (virtual) registers: i.e. a local variable name will be mapped to a machine register if there is one available, otherwise it is mapped to a memory location
+(e.g. the stack), but the mapping is transparent and local variables should be viewed as registers.</p>
+<li>Addresses</li>
+</p>To specify where in memory to read or write we need an address. Any expression that evaluates to
+a wordn can be used as an address, where n is the architecture’s natural pointer size, i.e.: n is the
+number of bytes needed to hold a memory address in the particular architecture.</p>
+<p>Absolute addresses can be used but what they refer to is implementation dependent. Their type is also
+wordn.</p>
+<li>Names</li>
+<p>A name declares either a register or amemory address. Register names are procedure’s local variables.
+Memory address names are either labels (Section 4.1) or procedure names (Section 5).</p>
+<li>Foreign language interface</li>
+<p>The foreign language interface is a way for C-- programs to use other calling conventions for procedure
+inter-operation with foreign code. This interface is nearly 100% portable across architectures
+(Section 5.3).</p>
+</ol>
+</article>
+</section>
+<section class="main-section" id="Data_layout_directives">
+  <header>Data layout directives</header>
+  <article>
+    <p>Memory in the data segment is allocated using the data directive. A memory block is organised as
+a sequence of typed data. Each datum is thought of as an array of bytes that may be initialised.</p>
+<p>Here is an example that allocates and initializes some memory. In particular, it allocates 8 datums
+of types word4, word2, float8, word4, word1, word2, word1 and word8 respectively. The
+example is explained in more detail in the remainder of this section:</p>
+<code>
+  data {<br>
+foo: word4[4]{1,2,3,ff}; /* ff is a forward reference */<br>
+word2[4]{1,2};<br>
+ff: float8[2]{2.8,3.1}; word4[2]{ff,foo};<br>
+str: word1[]"Hello world\0";<br>
+ustr: word2[]unicode("Hello world\0");<br>
+word1;<br>
+xs: word8[]{"This is an", "array of", "word8’s"};<br>
+}<br>
+</code>
+<p>There may be any number of data layout directives in a C-- program.</p>
+<ol>
+  <li>Labels</li>
+  <p>Labels are the means to refer to the allocated memory. They should be viewed as pointers and not as
+memory locations. A label declaration consists of a name followed by a colon. Once declared, a label
+is a name (and so an expression) that refers (points) to a memory address. Therefore it has wordn
+type, where n is the particular architecture’s natural pointer size. Labels may be used before their
+are declared, e.g. label ff is used in the initialisation of the data directive’s first datum before it is
+declared pointing to the third.</p>
+<i>Note that labels do not provide any information about the type of the data pointed to by them.</i>
+<p>A label points to the first byte after its declaration. Here is an example in which four labels point to
+the same datum:</p>
+<code>data { foo: label1: label2: bar: word4} /* just allocates */</code>
+<p>Memory is always allocated without padding inside a single data layout directive, so it is possible
+to find any given data in the data segment by starting from a label and adding the right offset, as in,
+for example, the read expression word2[foo+4]. Indeed, foo+4 does not have to point to the
+beginning of a data element. It may point to any other data byte, but it is assumed by C-- that it is
+2-byte aligned.</p>
+<p>To align a label (and hence the datum it points to) to a specific boundary, an alignment directive
+(Section 4.3) has to be placed before the label. In the following example, foo and bar might or
+might not be the same address, but bar is guaranteed to be aligned on an eight byte boundary.</p>
+<code>data { foo: align8;<br>
+bar: word4{0};<br>
+}</code>
+<p>It is be possible to have a stupid data layout directive with no labels that is inaccessible.</p>
+<li>Initialisation</li>
+  <p>Memory is allocated by specifying the type of the datum, the number of datum’s elements to allocate,
+and the initial value for each element. The particular syntax is:</p>
+<code>type[n]{constant-list};</code>
+<p>where n specifies how many elements of the type type have to be allocated, and constant-list provides
+the initial value (of type type) for each allocated element, in the form of a comma-separated list
+of constants or constant expressions (i.e. expressions whose value is known at compile time).</p>
+<p>There are a number of possible variants:</p>
+<ol>
+  <li>If [n] is not provided, only one element is allocated. The {constant-list} may or may not be
+provided. If provided, it should contain only one constant or constant expression to which the
+element is initialised. If not provided, no initial value is given. For example:<br>
+<code>
+  data { lb1: word1; }<br>
+/* Allocates one byte (contains garbage) */<br>
+data { lb2: word1{17}; }<br>
+/* Allocates one byte and initialises it to (ASCII code) 17 */<br>
+data { lb3: word4{17}; }<br>
+/* Allocates one 4-byte word and initialises it to integer 17 */<br>
+</code>
+</li>
+<li>If [n] is provided, then n elements are allocated. The {constant-list} may or may not be
+provided. If not provided, no initial value is given. If provided, it should contain c constants
+or constant expressions, such that c  n. Element i (i : 0 : : : (n - 1)) is initialised to the
+value of the constant or constant expression j (j : 0 : : : (c - 1)) in {constant-list}, such that
+j = i mod c. For example:<br>
+<code>
+data { lb1: word1[17]; }<br>
+/* Allocates 17 bytes (that contain garbage) */<br>
+data { lb2: word1[17]{0}; }<br>
+/* Allocates 17 bytes and initialises all of them to 0 */<br>
+data { lb3: word4[6]{1,2,3}; }<br>
+/* Allocates six 4-byte words and initialises them<br>
+* to 1,2,3,1,2,3 respectively.<br>
+*/<br>
+data { lb4: word4[6]{1,2,3,1,2,3}; }<br>
+/* Allocates six 4-byte words and initialises them<br>
+* to 1,2,3,1,2,3 respectively.<br>
+*/<br>
+data { lb5: word4[4]{1,2,3}; }<br>
+/* Allocates four 4-byte words and initialises them<br>
+* to 1,2,3,1 respectively.<br>
+*/<br>
+</code>
+</li>
+<li>There is also the possibility to have abbreviations when n = c.<br>
+<code>
+type[]{constant-list}; is an abbreviation for type[c]{constant-list};
+word1[]"char1 : : : charn"; is an abbreviation for word1[n]{’char1’, : : : ,’charn’};
+word2[]unicode("char1 : : : charn"); is an abbreviation for
+word2[n]{unicode(’char1’),. . .,unicode(’charn’)};</code>
+<p>For example:</p>
+<code>
+data { s1: word1[6]{’h’,’e’,’l’,’l’,’o’,’\0’}; }
+data { s2: word1[]"hello\0"; }
+/* Both directives allocate 7 bytes and initialise
+* them to the same ASCII code integers.
+*/
+data { f1: float8[3]{3.5, 4.4, 6.98}; }
+data { f1: float8[] {3.5, 4.4, 6.98}; }
+/* Both directives allocate three 8-byte floats and initialise
+* them to the same floating point numbers.
+*/
+</code>
+<p>Since the initialised value might have dependencies on the endianess, the only way to guarantee that
+a memory read (Section 6.2) gets the same initialised (or written) value, is to read the datum or the
+element with the same type as it was initialised (or written). For example, if a datum was initialised
+with data {foo: word2{17};}, if read back with word1[foo] the value might be 0 or 17
+depending on the architechture, but if read with word2[foo] it is guaranteed to be 17.</p></li>
+</ol>
+<li>Alignment</li>
+<p>For performance reasons, and also to comply with some architecture requirements, it is sometimes
+necessary to specify the alignment of data. The alignn directive inserts padding as needed, ensuring
+that the next datum is placed on an n byte boundary. The value of the padding is unspecified.</p>
+<p>In the following example, foo is aligned to a 4-byte boundary and bar to an 8-byte boundary. In both
+cases padding may be inserted: for example, between the last byte of the word4 and the first byte of
+the float8 (the datum pointed to by bar) there may be padding in order to place the float8 on
+an 8-byte boundary.</p>
+<code>
+data { align4;<br>
+foo: word4{1};<br>
+align8;<br>
+bar: float8{1.7};<br>
+}<br>
+</code>
+</ol>
+</article>
+</section>
+<section class="main-section" id="Procedures">
+  <header>Procedures</header>
+  <article>
+    <p>Procedures are the means to place information in the code segment. They are very similar to highlevel
+language procedures. Procedures can optionally take arguments, contain static data declarations
+and return values.</p>
+<ol>
+  <li>Procedure definition</li>
+    <p>A procedure definition has the following syntax:</p>
+    <code>conv proc name(type arg1,. . . ,type argn)<br>
+{ body }
+</code>
+<p>where:</p>
+<ul>
+  <li><i>conv</i> is the (optional) calling convention declaration (Section 5.3) needed for inter-operation.</li>
+  <li><i>proc name</i> is the procedure name, which stands for the procedure entry point address and, as a
+name, will be an expression (Section 3.7). It may be also used in call (Section 5.2.8) and jump
+(Section 5.2.9) statements.</li>
+<li><i>type arg1,. . . , type argn</i> is the formal argument list. Each formal argument consists of a
+name preceded by its type. If the procedure takes no arguments, the list should be empty.
+Unlike C, procedures with a variable number of arguments are not supported. The formal
+arguments are only in scope of the procedure body.</li>
+<li><i>body </i>is the procedure body enclosed in curly braces. It may consists of a sequence of statements,
+such as local variable declarations, assignments, memory reads, local control label declarations,
+gotos, etc. It is unspecified what happens if control flows off the edge of a procedure
+body, that is, every control path in a procedure body should finish in a jump (Section 5.2.9) or
+in a return (Section 5.2.10) statement. Therefore, a procedure body should have at least one
+statement.</li>
+</ul>
+<p>The return type needs not be specified in the definition.</p>
+<p>For example, procedure foo is defined as a procedure that expects one word4 argument. Inside the
+procedure body, the local variable (or register) x is declared, followed by an assignment statement
+and a jump statement to procedure bar.</p>
+<code>
+foo(word4 y) {<br>
+word4 x;<br>
+x = y + 1;<br>
+jump bar(x);<br>
+}<br>
+</code>
+<li>Statements</li>
+<ol>
+  <li><i>skip;</i></li>
+  <p>This is just the null statement and can be inserted anywhere an ordinary statement can. It does not
+have any effects. It is used for clarity instead of the error-prone stand-alone semicolon.</p>
+<li>Declaration</li>
+<p>A declaration statement has the following syntax:</p>
+<code>type name1,. . . ,namen ;</code>
+<p>It declares the local variable names name1 : : : namen of type type. These names will be mapped to
+(virtual) machine registers. As names, they are also expressions of type type.</p>
+<p>Local variables have to be declared before they are used.</p>
+<p>Local variables have to be declared before they are used.</p>
+<li>Assignment</li>
+<p>An assignment statement has the following syntax:</p>
+<code>name = expr ;</code>
+<p>It stores the value of expr in the local variable (or register) name, where expr has the same type as
+name.</p>
+<li>Memory write</li>
+<p>A memory write statement has the following syntax:</p>
+<code>wordn[expr1] = expr2 ;</code>
+<p>to write wordn values, or</p>
+<code>floatn[expr1] = expr2 ;</code>
+<p>to write floatn values.</p>
+<p>Expression expr1 has type wordn, where n is the particular architecture’s natural pointer size, and its
+value is the memory address in which the value of expr2 is written. Expression expr1 will typically
+contain one or more labels. Expression expr2 should be of type wordn or floatn respectively,
+otherwise the value written in memory is unspecified</p>
+<p>The following example stores the ASCII integer code of ’A’ in the 4th byte of the datum pointed to
+by label</p>
+<code>word1[label+4] = ’A’;</code>
+<p>The address yielded by expr1 is assumed aligned to the size of the type, namely, n. A memory write
+can optionally be qualified with an alignment flag {aligna}, so the syntax is now:</p>
+<code>wordn{aligna}[expr1] = expr2 ;
+floatn{aligna}[expr1] = expr2 ;</code>
+<p>A few examples of memory writes with flagged alignment:</p>
+<ul>
+  <li><i>float8{align4}[label] = expr</i> does a 8-byte write but assumes that label is aligned
+to a 4 byte boundary.</li>
+<li><i>word4{align1}[label] = expr</i> does a 4-byte write but assumes that label is aligned
+to a byte boundary (pointer to a byte).</li>
+<li><i>word1{align4}[label] = expr</i> does a 1-byte write but assumes that label is aligned
+to a 4 byte boundary.</li>
+</ul>
+<li><i>if</i> and relational operations</li>
+<p>Conditional execution of code is accomplished with the if statement. It has the following syntax:</p>
+<code>if expr1 rel expr2 { . . . } else { . . . }</code>
+<p>The else branch is optional and the statement blocks may be empty, as in if x == 0 {}, but the
+curly braces are mandatory even for single statements, as in</p>
+<code>if x == 0 { x = x + 1;}</code>
+<p>The condition test is very simple: it consists of a relational operation, rel, that takes two expressions
+as arguments. The term “operation” is used instead of “operator”, therefore avoiding confusion with
+C-- operators that are used in expressions (Section 6). Relational operations are only used in if
+condition tests; they cannot be used anywhere else.</p>
+<p>This is the set of relational operations:</p>
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Relation</th>
+  </tr>
+  <tr>
+    <td>==</td>
+    <td>Equality</td>
+  </tr>
+  <tr>
+    <td>!=</td>
+    <td>NonEquality</td>
+  </tr>
+  <tr>
+    <td>></td>
+    <td>Greater Than</td>
+  </tr>
+  <tr>
+    <td>>=</td>
+    <td>Greater Than or Equal</td>
+  </tr>
+  <tr>
+    <td><</td>
+    <td>Less Than</td>
+  </tr>
+  <tr>
+    <td><=</td>
+    <td>Less Than or Equal</td>
+  </tr>
+  </table>
+  <p>They can all be combined with these flags:</p>
+  <table>
+    <tr>
+      <th>Flag</th>
+      <th>Meaning</th>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Signed comparison (default)</td>
+    </tr>
+    <tr>
+      <td>u</td>
+      <td>Unsigned comparison(default)</td>
+    </tr>
+    <tr>
+      <td>f</td>
+      <td>Floating point comparison</td>
+    </tr>
+    <tr>
+      <td>fo</td>
+      <td>Floating point unordered comparison; if supported</td>
+    </tr>
+ </table>   
+ <p>When the condition test holds, the block of statements immediately following the condition test is
+executed. Otherwise, if an optional else branch has been specified, its block of statements is executed.
+After execution of the any of these blocks, control resumes at the first statement after the if
+or if/else.</p>
+<p>In the following example, >= is used in the if test condition without a flag (default signed comparison),
+and != is used combined with flag u to test whether the unsigned integer held in x is zero.</p>
+<code>
+f(word4 x)<br>
+{<br>
+word4 y;<br>
+y = 0;<br>
+if y >= word4[foo+8] {<br>
+y = y + 1;<br>
+return (y);<br>
+} else {<br>
+x = x -u 1;<br>
+if x !=u 0 {<br>
+y = y + 2;<br>
+}<br>
+return (y);<br>
+}<br>
+}<br>
+</code>
+</ol>
+</article>
+</section>
+<section class="main-section" id="Expressions">
+  <header>Expressions</header>
+  <article>
+    <ol>
+      <li>Introduction</li>
+      <p>An C-- expression can be a constant, a name, a memory read, a primitive, or an operator applied
+to other expressions. C-- makes a distinction between integer and floating point expressions, i.e.,
+expressions that yield words or floats as result.</p>
+<p>The integer and floating point model is based on the LIA-1 standard (ISO/IEC 10967-1:1994(E)) and
+if there are any inconsistencies between this manual and LIA-1, the LIA-1 standard is correct, unless
+otherwise noted.</p>
+<p>Signed and unsigned numbers are not distinguished. Instead, like any other assembler, it is the operations
+that are typed.</p>
+<p>The type of any subexpression is always known and there are no automatic type casts or type conversions.</p>
+<p>The following sections cover all the C-- operators, all the C-- primitives, and the memory read
+expression.</p>
+<li>memory read</li>
+<p>Memory read expressions have the following syntax:</p>
+<code>wordm[expr]<br>
+Type: wordn !word</code>
+<p>to read a wordm value, and</p>
+<code>floatm[expr]<br>
+Type: wordn !floatm</code>
+<p>to read a floatm value.</p>
+<p>Expression expr has type wordn, where n is the particular architecture’s natural pointer size. Its
+value is the address of the memory location to read from. It will typically contain one or more labels.
+The size m indicates how many bytes to read from that location.</p>
+<p>The following example expression reads a 4-byte word from the second byte pointed to by label p:</p>
+<code>word4[p+1]</code>
+<p>The address yielded by expr is assumed aligned to an m-byte boundary. A memory read can optionally
+be qualified with an alignment flag {aligna}. The syntax is:</p>
+<code>wordm{aligna}[expr]
+floatm{aligna}[expr]</code>
+<p>A few examples of memory reads with flagged alignment:</p>
+<ul>
+  <li>float8{align4}[label] reads a 8-byte float but assumes that label is aligned to a
+4 byte boundary.</li>
+<li>word4{align1}[label] reads a 4-byte word but assumes that label is aligned to a
+byte boundary (pointer to a byte).</li>
+<li>word1{align4}[label] reads 1-byte but assumes that label is aligned to a 4 byte
+boundary.</li>
+</ul>
+</ol>
+</article>
+</section>
+<section class="main-section" id="Further_work">
+  <header>Further work</header>
+  <article>
+    <p>This is the TO DO list. It lists all the open issues and the stuff that remains to be added to this manual.
+DATE: Mon Apr 20 11:58:56 BST 1998</p>
+<h3>Expressions and constants</h3>
+  <ul>
+    <li>Type conversion (not casting, but conversion):
+float!word<br>
+word !float<br>
+</li>
+<li>Casting float!word.</li>
+<li>Add w/ carry operator missing.</li>
+<li>How to define symbolic name constants.</li>
+<li>Be more specific about number constants and their syntax. Saying that they’re like C’s is not enough.</li>
+<li>Regarding pointers.</li>
+<p>Pointer arithmetic, e.g.: float4[ptr + i] = float4[ptr];</p>
+<p>If natural pointer size is 8 then ptr has type word8; adding integer offset register i (say, of type word4), if numbers
+have word4 type then expression ptr+i needs a explicit casting: ptr + word8(i). More architecturedependancy
+in the code. (See “Preprocessing”)</p>
+<p>Also, C-- has only one pointer type wordn, where n is the architecture’s natural pointer size. Could that cause
+troubles for architectures that offer two or more pointer sizes? Maybe not because we could just get the bigger (less
+restrictive) size, but I am not sure if that makes sense.</p>
+<li>Easy to tell expression type.</li>
+</ul>
+<h3>Preprocessing</h3>
+<p>C’s preprocessing directives can be used in C-- (it would be easy to do, the C-- compiler just passes the C preprocessor to
+the C-- program before compiling it). It would help for offset-calculation expressions in architectures where the type of an
+integer is say word4 and the type of a label is word8, and lots of typecast have to be done (since casting is not automatically
+done), for offsets, in expressions like</p>
+<code>word4[label+ word8(3)] = 43;</code>
+<p>where the integer is typecast, we could have:</p>
+<code>
+#ifdef ... /* pointer size == integer size == 8*/<br>
+#then<br>
+#define CAST(x) (x)<br>
+#else /* pointer size != integer size == 4 */<br>
+#define CAST(x) word8((x))<br>
+word4[label+CAST(3)] = 43;</code>
+<p>to avoid to modify the C-- code anytime we want to port the code. For more complicated expressions rewriting will be
+tedious.</p>
+<p>Talk about preprocessing in the manual.</p>
+<h3>Data layout directives</h3>
+<p>Allow expressions in data declarations to specify the number of elements. These expressions should have values known at
+compile-time. That is, instead of type[sconst]... , it should be: type[expr]... in Figure 1.</p>
+<h3>Procedures and statements</h3>
+<ul>
+  <li>Local declarations. Why the block as an statement?
+The manual says that no nested scoping is possible in NESTED SCOPING section.</li>
+<li>Stack directive.</li>
+<li>Which calling conventions are there? Now: C, Pascal.</li>
+<li>Have optional list in return, e.g., instead of return ();, just return;?</li>
+<li>switch: could it take also expressions as alternatives? Right now each alternative must be a list of constants, but
+the former is not difficult to implement, although it is inefficient.<li>
+  <p>Explain better how the optional range improves compiler performance in the switch statement.</p>
+  <li>Static data in procedures: global or local scope? Indicate in manual.</li>
+  <p>Static data declarations in procedures. The following has been removed from Section 5:</p>
+  <p>When declaring static data in a procedure, the data has to be declared between the name plus formal argument list,
+and the procedure body. In memory, the data will be placed immediately before the procedure’s entry point, so that
+the procedure name points to the memory after the data. In the following example, word4[foo - 4] has the
+value 4711.</p>
+<code>
+foo()<br>
+data { word4{31415, 4711}; }<br>
+{<br>
+word4 x;<br>
+x = x + 1;<br>
+return(x);<br>
+}<br>
+</code>
+</ul>
+</article>
+</section>
+    </main>
+  </body> 
+</html>
